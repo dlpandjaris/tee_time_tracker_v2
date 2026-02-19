@@ -6,6 +6,9 @@ use std::sync::Arc;
 use std::collections::HashMap;
 use std::net::SocketAddr;
 
+use tower_http::cors::{CorsLayer, Any};
+use axum::http::Method;
+
 use axum::{
     routing::get,
     Router,
@@ -39,12 +42,18 @@ async fn main() {
         courses: Arc::new(courses),
     };
 
+    let cors = CorsLayer::new()
+        .allow_origin(Any) // allow all origins (safe for dev)
+        .allow_methods([Method::GET])
+        .allow_headers(Any);
+
     // build our application with a route
     let app = Router::new()
         .route("/", get(root))
         .route("/courses", get(courses_handler))
         .route("/tee_times", get(tee_times_handler))
-        .with_state(state);
+        .with_state(state)
+        .layer(cors);
 
     let port = std::env::var("PORT")
         .unwrap_or_else(|_| "8080".to_string())
