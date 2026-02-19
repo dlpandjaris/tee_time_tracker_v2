@@ -9,7 +9,7 @@ pub mod courses {
     pub use super::*;
 
     pub fn load_courses() -> Vec<GolfCourse> {
-        let data = fs::read_to_string("./src/resources/golf_courses.json")
+        let data = fs::read_to_string("src/resources/golf_courses.json")
             .expect("Failed to read golf_courses.json");
 
         serde_json::from_str(&data)
@@ -54,7 +54,6 @@ pub mod courses {
                 coords.min_lon <= course.lon &&
                 course.lon <= coords.max_lon
             })
-            // .cloned()
             .collect()
     }
 }
