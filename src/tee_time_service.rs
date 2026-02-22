@@ -303,8 +303,10 @@ pub mod foreup {
         parsed
             .into_iter()
             .filter_map(|tt| {
-                let parsed_dt = chrono::NaiveDateTime::parse_from_str(&tt.time, "%Y-%m-%d %H:%M").ok()?;
-                let tee_time = Utc.from_utc_datetime(&parsed_dt);
+                // Interpret as Chicago time (CST/CDT aware)
+                let naive = chrono::NaiveDateTime::parse_from_str(&tt.time, "%Y-%m-%d %H:%M").ok()?;
+                let central_dt = Chicago.from_local_datetime(&naive).single()?;
+                let tee_time = central_dt.with_timezone(&Utc);
 
                 Some(TeeTime {
                     course: course.name.clone(),
