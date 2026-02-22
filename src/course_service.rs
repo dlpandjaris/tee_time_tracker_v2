@@ -24,22 +24,7 @@ pub mod courses {
             max_lon: -94.235,
         }
     }
-
-    // pub fn get_courses(courses: &[GolfCourse], coords: Option<Coords>) -> Vec<GolfCourse> {
-    //     let coords = coords.unwrap_or_else(default_coords);
-
-    //     courses
-    //         .iter()
-    //         .filter(|course| {
-    //             coords.min_lat <= course.lat &&
-    //             course.lat <= coords.max_lat &&
-    //             coords.min_lon <= course.lon &&
-    //             course.lon <= coords.max_lon
-    //         })
-    //         .cloned()
-    //         .collect()
-    // }
-
+    
     pub fn get_courses<'a>(
         courses: &'a [GolfCourse],
         coords: Option<Coords>,

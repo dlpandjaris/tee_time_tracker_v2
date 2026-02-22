@@ -1,6 +1,6 @@
 use regex::Regex;
 use scraper::{Html, Selector};
-use chrono::{NaiveDateTime, Utc, TimeZone};
+use chrono::{NaiveDateTime, Utc, TimeZone, DateTime};
 use reqwest::{
     Client,
     Response
@@ -16,6 +16,7 @@ use crate::structs::{
     GolfBackTeeTime,
     GolfBackRate,
     ForeUpTeeTime,
+    TeeItUpResponse,
 };
 
 pub mod book_a_tee_time {
@@ -184,14 +185,14 @@ pub mod golfback {
             .into_iter()
             .filter_map(|tt: GolfBackTeeTime| {
                 let first_rate: &GolfBackRate = tt.rates.first()?;
-                let parsed_dt = chrono::DateTime::parse_from_rfc3339(&tt.dateTime).ok()?;
+                let parsed_dt = chrono::DateTime::parse_from_rfc3339(&tt.date_time).ok()?;
                 let tee_time = parsed_dt.with_timezone(&Utc);
 
                 Some(TeeTime {
                     course: course.name.clone(),
                     tee_time,
                     price: first_rate.price,
-                    players: tt.playersMax,
+                    players: tt.players_max,
                     holes: tt.holes.into_iter().max(),
                     lat: course.lat,
                     lon: course.lon,
@@ -200,7 +201,7 @@ pub mod golfback {
                         course_id,
                         date,
                         tt.id,
-                        first_rate.ratePlanId,
+                        first_rate.rate_plan_id,
                         players
                     ),
                 })
@@ -283,8 +284,6 @@ pub mod foreup {
             }
         };
 
-
-
         // let body_text = response.text().await.unwrap_or_default();
         // println!("[ForeUp] {} RAW RESPONSE:\n{}", course.name, body_text);
 
@@ -300,14 +299,8 @@ pub mod foreup {
         parsed
             .into_iter()
             .filter_map(|tt| {
-                // let naive = chrono::NaiveDateTime::parse_from_str(&tt.time, "%Y-%m-%d %H:%M").ok()?;
-                // ForeUp times are US/Central; convert to UTC
-
-                // let tee_time = chrono_tz::US::Central.from_local_datetime(&naive).single()?.with_timezone(&Utc);
-                
-                let parsed_dt = chrono::DateTime::parse_from_str(&tt.time, "%Y-%m-%d %H:%M").ok()?;
-                let tee_time = parsed_dt.with_timezone(&Utc);
-
+                let parsed_dt = chrono::NaiveDateTime::parse_from_str(&tt.time, "%Y-%m-%d %H:%M").ok()?;
+                let tee_time = Utc.from_utc_datetime(&parsed_dt);
 
                 Some(TeeTime {
                     course: course.name.clone(),
@@ -350,11 +343,119 @@ pub mod foreup {
     }
 }
 
+pub mod teeitup {
+    use super::*;
 
+    pub async fn fetch(
+        client: &Client,
+        course: &GolfCourse,
+        date: &str,
+        // players: u32,
+    ) -> Vec<TeeTime> {
+        let verbose = match &course.id {
+            CourseId::Verbose(v) => v,
+            _ => return vec![],
+        };
 
+        let response = match client
+            .get("https://phx-api-be-east-1b.kenna.io/v2/tee-times")
+            .query(&[
+                ("date", date),
+                ("facilityIds", &verbose.id.to_string()),
+            ])
+            .header("Accept", "application/json, text/plain, */*")
+            .header("Origin", &verbose.url)
+            .header("Referer", &verbose.url)
+            .header("User-Agent", "Mozilla/5.0")
+            .header("X-Be-Alias", &verbose.alias)
+            .send()
+            .await
+        {
+            Ok(r) => r,
+            Err(e) => {
+                eprintln!("[TeeItUp] {} HTTP error: {}", course.name, e);
+                return vec![];
+            }
+        };
 
+        let raw_json: serde_json::Value = match response.json().await {
+            Ok(v) => v,
+            Err(e) => {
+                eprintln!("[TeeItUp] {} JSON parse error: {}", course.name, e);
+                return vec![];
+            }
+        };
 
+        // API returns an array where [0]['teetimes']
+        let first = match raw_json.get(0) {
+            Some(v) => v,
+            None => return vec![],
+        };
 
+        let parsed: TeeItUpResponse = match serde_json::from_value(first.clone()) {
+            Ok(p) => p,
+            Err(e) => {
+                eprintln!("[TeeItUp] {} STRUCT parse error: {}", course.name, e);
+                return vec![];
+            }
+        };
+
+        parsed
+            .teetimes
+            .into_iter()
+            .filter_map(|tt| {
+                let rate = tt.rates.first()?;
+
+                // Promotion overrides base rate
+                let price_cents = if let Some(promo) = &rate.promotion {
+                    promo.green_fee_cart
+                } else {
+                    rate.green_fee_cart?
+                };
+
+                let price = price_cents as f64 / 100.0;
+
+                let tee_time = DateTime::parse_from_rfc3339(&tt.teetime)
+                    .or_else(|_| DateTime::parse_from_str(&tt.teetime, "%Y-%m-%d %H:%M:%S"))
+                    .ok()?
+                    .with_timezone(&Utc);
+
+                Some(TeeTime {
+                    course: course.name.clone(),
+                    tee_time,
+                    price,
+                    players: tt.max_players,
+                    holes: Some(rate.holes),
+                    lat: course.lat,
+                    lon: course.lon,
+                    book_url: format!(
+                        "{}/?course={}&date={}&max=9999",
+                        verbose.url, verbose.id, date
+                    ),
+                })
+            })
+            .collect()
+    }
+
+    pub async fn search(
+        courses: &[&GolfCourse],
+        date: &str,
+        // players: u32,
+    ) -> Vec<TeeTime> {
+        let client = Client::new();
+
+        let tasks = courses
+            .iter()
+            .filter(|c| c.source == "teeitup")
+            .map(|course| fetch(&client, course, date)); //, players));
+
+        join_all(tasks)
+            .await
+            .into_iter()
+            .flatten()
+            .collect()
+    }
+}
 
 
 pub async fn get_tee_times(
@@ -366,10 +467,10 @@ pub async fn get_tee_times(
 
     results.extend(book_a_tee_time::search(courses, date, players).await);
     results.extend(golfback::search(courses, date, players).await);
-    // results.extend(foreup::search(courses, date, players).await);
+    results.extend(foreup::search(courses, date, players).await);
+    results.extend(teeitup::search(courses, date).await); //, players).await);
     // later:
-    // results.extend(search_foreup(...).await);
-    // results.extend(search_cps(...).await);
+    // results.extend(cps::search(...).await);
 
     results
 }

@@ -18,11 +18,12 @@ start=$(date +%s%3N)
 
 # Run curl and capture response + timing
 teetimes=$(curl -G "$BASE_URL/tee_times" \
-  --data-urlencode "date=2026-02-21" \
+  --data-urlencode "date=2026-02-28" \
   --data-urlencode "players=4" \
-  --data-urlencode 'coords={%22min_lat%22:38.800618109910125,%22min_lon%22:-94.8499263107666,%22max_lat%22:38.85411044179456,%22max_lon%22:-94.6602404892334}')
-#   --data-urlencode 'coords={"min_lat":38.686,"min_lon":-96.563,"max_lat":39.539,"max_lon":-93.528}')
-#   --data-urlencode 'coords={min_lat:39.1618,min_lon:-94.899,max_lat:39.1752,max_lon:-94.8515}')
+  # --data-urlencode 'coords={"min_lat":38.806081866102396,"min_lon":-94.85117254427148,"max_lat":38.859570093917206,"max_lon":-94.65616522005273}') #heritage
+  # --data-urlencode 'coords={"min_lat":38.895206560610035,"min_lon":-94.55215176681716,"max_lat":38.94862777433994,"max_lon":-94.35714444259841}') #fred arbanas
+  # --data-urlencode 'coords={"min_lat":38.686,"min_lon":-96.563,"max_lat":39.539,"max_lon":-93.528}')
+  --data-urlencode 'coords={min_lat:39.1618,min_lon:-94.899,max_lat:39.1752,max_lon:-94.8515}')
 end=$(date +%s%3N)
 
 echo "${teetimes:0:1000}"

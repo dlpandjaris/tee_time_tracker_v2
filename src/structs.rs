@@ -57,49 +57,55 @@ pub struct GolfBackResponse {
     pub data: Vec<GolfBackTeeTime>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct GolfBackPrimaryPrices {
-    pub basePrice: f64,
-    pub holes: i64,
-    pub price: f64,
-}
+// #[derive(Debug, Deserialize)]
+// pub struct GolfBackPrimaryPrices {
+//     #[serde(rename = "basePrice")]
+//     pub base_price: f64,
+//     pub holes: i64,
+//     pub price: f64,
+// }
 
 #[derive(Debug, Deserialize)]
 pub struct GolfBackTeeTime {
-    pub courseId: String,
-    pub courseName: String,
-    pub dateTime: String,
-    pub has9Holes: bool,
-    pub hasDailyGimmeV2: bool,
-    pub hasDeal: bool,
+    // pub courseId: String,
+    // pub courseName: String,
+    #[serde(rename = "dateTime")]
+    pub date_time: String,
+    // pub has9Holes: bool,
+    // pub hasDailyGimmeV2: bool,
+    // pub hasDeal: bool,
     pub holes: Vec<u32>,
     pub id: String,
-    pub isAvailable: bool,
-    pub localDateTime: String,
-    pub location: Option<String>,
-    pub lockExpiration: Option<String>,
-    pub playersDisplay: String,
-    pub playersMax: u32,
-    pub playersMin: u32,
-    pub primaryPrices: Vec<GolfBackPrimaryPrices>,
+    // pub isAvailable: bool,
+    // pub localDateTime: String,
+    // pub location: Option<String>,
+    // pub lockExpiration: Option<String>,
+    // pub playersDisplay: String,
+    #[serde(rename = "playersMax")]
+    pub players_max: u32,
+    // #[serde(rename = "playersMin")]
+    // pub players_min: u32,
+    // pub primaryPrices: Vec<GolfBackPrimaryPrices>,
     pub rates: Vec<GolfBackRate>,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct GolfBackRate {
-    pub basePrice: f64, // 34.0,
-    pub description: String, // "All you can play, up to 18 holes",
-    pub feeDisplay: f64, // 0.0,
-    pub hasCartIncluded: bool, // true,
-    pub holes: u32, // 18,
-    pub isDailyGimmeV2: bool, // false,
-    pub isDeal: bool, // false,
-    pub isGimme: bool, // false,
-    pub isPrimary: bool, // true,
-    pub name: String, // "Twilight",
+    // #[serde(rename = "basePrice")]
+    // pub base_price: f64, // 34.0,
+    // pub description: String, // "All you can play, up to 18 holes",
+    // pub feeDisplay: f64, // 0.0,
+    // pub hasCartIncluded: bool, // true,
+    // pub holes: u32, // 18,
+    // pub isDailyGimmeV2: bool, // false,
+    // pub isDeal: bool, // false,
+    // pub isGimme: bool, // false,
+    // pub isPrimary: bool, // true,
+    // pub name: String, // "Twilight",
     pub price: f64, // 34.0,
-    pub ratePlanId: String, // "0bc2bf83-2bf5-4ba1-be8b-a06691bf761a",
-    pub usePrimaryAfterSelection: bool, // false
+    #[serde(rename = "ratePlanId")]
+    pub rate_plan_id: String, // "0bc2bf83-2bf5-4ba1-be8b-a06691bf761a",
+    // pub usePrimaryAfterSelection: bool, // false
 }
 
 #[derive(Debug, Deserialize)]
@@ -142,59 +148,29 @@ where
 }
 
 
+#[derive(Debug, Deserialize)]
+pub struct TeeItUpResponse {
+    pub teetimes: Vec<TeeItUpTeeTime>,
+}
 
+#[derive(Debug, Deserialize)]
+pub struct TeeItUpTeeTime {
+    pub teetime: String,
+    #[serde(rename = "maxPlayers")]
+    pub max_players: u32,
+    pub rates: Vec<TeeItUpRate>,
+}
 
+#[derive(Debug, Deserialize)]
+pub struct TeeItUpRate {
+    pub holes: u32,
+    #[serde(rename = "greenFeeCart")]
+    pub green_fee_cart: Option<u64>,
+    pub promotion: Option<TeeItUpPromotion>,
+}
 
-// #[derive(Debug, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct GolfBackResponse {
-//     pub data: Vec<GolfBackTeeTime>,
-// }
-
-// #[derive(Debug, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct GolfBackPrimaryPrices {
-//     pub base_price: f64,
-//     pub holes: i64,
-//     pub price: f64,
-// }
-
-// #[derive(Debug, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct GolfBackTeeTime {
-//     pub course_id: String,
-//     pub course_name: String,
-//     pub date_time: String,
-//     pub has9_holes: bool,
-//     pub has_daily_gimme_v2: bool,
-//     pub has_deal: bool,
-//     pub holes: Vec<u32>,
-//     pub id: String,
-//     pub is_available: bool,
-//     pub local_date_time: String,
-//     pub location: Option<String>,
-//     pub lock_expiration: Option<String>,
-//     pub players_display: String,
-//     pub players_max: u32,
-//     pub players_min: u32,
-//     pub primary_prices: Vec<GolfBackPrimaryPrices>,
-//     pub rates: Vec<GolfBackRate>,
-// }
-
-// #[derive(Debug, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct GolfBackRate {
-//     pub base_price: f64,
-//     pub description: String,
-//     pub fee_display: f64,
-//     pub has_cart_included: bool,
-//     pub holes: u32,
-//     pub is_daily_gimme_v2: bool,
-//     pub is_deal: bool,
-//     pub is_gimme: bool,
-//     pub is_primary: bool,
-//     pub name: String,
-//     pub price: f64,
-//     pub rate_plan_id: String,
-//     pub use_primary_after_selection: bool,
-// }
+#[derive(Debug, Deserialize)]
+pub struct TeeItUpPromotion {
+    #[serde(rename = "greenFeeCart")]
+    pub green_fee_cart: u64,
+}

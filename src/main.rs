@@ -111,7 +111,7 @@ async fn tee_times_handler(
         .and_then(|p| p.parse::<u32>().ok())
         .unwrap_or(4);
 
-    println!("RAW coords param: {:?}", params.get("coords"));
+    // println!("RAW coords param: {:?}", params.get("coords"));
 
     let coords = params
         .get("coords")
