@@ -1,6 +1,7 @@
 use regex::Regex;
 use scraper::{Html, Selector};
 use chrono::{NaiveDateTime, Utc, TimeZone, DateTime};
+use chrono_tz::America::Chicago;
 use reqwest::{
     Client,
     Response
@@ -77,7 +78,10 @@ pub mod book_a_tee_time {
                 let players_avail: u32 = div.value().attr("data-available")?.parse().ok()?;
 
                 let naive = NaiveDateTime::parse_from_str(tee_time_str, "%Y%m%d%H%M").ok()?;
-                let tee_time = Utc.from_utc_datetime(&naive);
+                
+                // Interpret as Chicago time (CST/CDT aware)
+                let central_dt = Chicago.from_local_datetime(&naive).single()?;
+                let tee_time = central_dt.with_timezone(&Utc);
 
                 let href = div
                     .select(&link_selector)
