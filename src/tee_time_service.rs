@@ -40,6 +40,7 @@ pub mod book_a_tee_time {
             "https://bookateetime.teequest.com/search/{}/{date}?selectedPlayers={players}&selectedHoles=18",
             course_id
         );
+        // println!("url: {}", &url);
 
         let response: Response = match client.get(&url).send().await {
             Ok(r) => r,
@@ -59,7 +60,7 @@ pub mod book_a_tee_time {
 
         let document: Html = Html::parse_document(&body);
         let tee_time_selector: Selector = Selector::parse("div.tee-time").unwrap();
-        let holes_selector: Selector = Selector::parse("span").unwrap();
+        let holes_selector: Selector = Selector::parse("div.tee-time__book > span").unwrap();
         let link_selector: Selector = Selector::parse("a.btn").unwrap();
         let holes_re: Regex = Regex::new(r"\d+").unwrap();
 
@@ -68,10 +69,17 @@ pub mod book_a_tee_time {
             .filter_map(|div| {
                 let holes = div
                     .select(&holes_selector)
-                    .find_map(|s| {
+                    .filter_map(|s| {
                         let text = s.text().collect::<String>();
-                        holes_re.find(&text)?.as_str().parse::<u32>().ok()
-                    });
+                        if text.contains("holes") {
+                            holes_re
+                                .find(&text)
+                                .and_then(|m| m.as_str().parse::<u32>().ok())
+                        } else {
+                            None
+                        }
+                    })
+                    .next();
 
                 let tee_time_str = div.value().attr("data-date-time")?;
                 let price: f64 = div.value().attr("data-price")?.parse().ok()?;
